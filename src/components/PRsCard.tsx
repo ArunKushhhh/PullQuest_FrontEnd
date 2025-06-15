@@ -1,3 +1,4 @@
+// src/components/PRCard.tsx
 "use client"
 
 import {
@@ -17,6 +18,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { useCalculateXp } from "@/hooks/useCalculateXp"
 import MergeFeedbackDialog from "./DialogPRs"
+import axios from "axios"
 
 interface RawPR {
   number: number
@@ -41,6 +43,10 @@ interface RawPR {
 interface PRCardProps {
   pr: RawPR
   isSelected: boolean
+  staking?: number
+  githubUsername: string
+  owner: string
+  repo: string
   onSelect: () => void
   onFetchIssue: () => void
   onClosePR: () => void
@@ -49,6 +55,10 @@ interface PRCardProps {
 
 export default function PRCard({
   pr,
+  staking,
+  githubUsername,
+  owner,
+  repo,
   isSelected,
   onSelect,
   onFetchIssue,
@@ -58,27 +68,151 @@ export default function PRCard({
   const [showMergeDialog, setShowMergeDialog] = useState(false)
   const { calculateXp } = useCalculateXp()
 
-  const handleFeedbackSubmit = (feedback: {
-    ratings: Record<string, number>
-    bonuses: Record<string, boolean>
-  }) => {
-    const xpResult = calculateXp(feedback)
-    console.log("📝 Feedback:", feedback)
-    console.log("🏆 XP Result:", xpResult)
+  // inside PRCard.tsx
+const handleFeedbackSubmit = async (
+    feedback: {
+      ratings: Record<string, number>;
+      bonuses: Record<string, boolean>;
+    }
+  ) => {
+    const base = import.meta.env.VITE_API_URL || "http://localhost:8012";
+    const jwt  = localStorage.getItem("token");
+  
+    // helper → turn every “#123” mention into number 123
+    const extractLinkedIssues = (body: string): number[] =>
+      Array.from(body.matchAll(/#(\d+)/g), m => parseInt(m[1], 10));
+  
+    try {
+      /* ───────── 1. Calculate rewards ───────── */
+      const { totalXP } = calculateXp(feedback);
+      const coinsAwarded = totalXP * 2;        // 2 coins / XP
+  
+      /* ───────── 2. Merge the PR (returns the merge commit SHA) ───────── */
+      console.log("🔄 Merging PR via GitHub API…");
+      const mergeRes = await axios.post(
+        `${base}/api/maintainer/merge-pr`,
+        {
+          owner,
+          repo,
+          pull_number: pr.number,
+          author: pr.user.login,
+          staking,
+          xp: totalXP,
+        },
+        {
+          withCredentials: true,
+          headers: { Authorization: jwt ? `Bearer ${jwt}` : undefined },
+        }
+      );
+  
+      // GitHub returns the SHA under the key `sha`
+      const mergeSha: string =
+        mergeRes.data?.data?.sha || mergeRes.data?.data?.merge_commit_sha;
+  
+      if (!mergeSha) throw new Error("Could not obtain merge SHA from API");
+      console.log("✅ PR merged, SHA =", mergeSha);
+  
+      /* ───────── 3. Ingest merged-PR record ───────── */
+      await axios.post(
+        `${base}/api/maintainer/ingest-merged-pr`,
+        {
+          githubUsername,
+          repository: { owner, repo },
+  
+          // only the fields your schema actually requires
+          pr: {
+            id:        pr.number * 1_000_000,   // synthetic unique ID
+            number:    pr.number,
+            title:     pr.title,
+            body:      pr.body ?? "",
+            state:     "closed",
+            html_url:  pr.html_url,
+            draft:     pr.draft ?? false,
+  
+            /* ✅   required merge-sha fields   */
+            head:             { sha: mergeSha },
+            base:             { sha: mergeSha },
+            merge_commit_sha: mergeSha,
+  
+            merged:     true,
+            merged_at:  new Date().toISOString(),
+  
+            /* minimal user info */
+            user: {
+              id:    0,
+              login: pr.user.login,
+              avatar_url: pr.user.avatar_url ?? "",
+              html_url:   `https://github.com/${pr.user.login}`,
+              type:  "User",
+            },
+  
+            /* optional extras (kept from original) */
+            assignees:            pr.assignees ?? [],
+            requested_reviewers:  pr.requested_reviewers ?? [],
+            labels:               pr.labels ?? [],
+            comments:             pr.comments ?? 0,
+            additions:            pr.additions ?? 0,
+            deletions:            pr.deletions ?? 0,
+            changed_files:        pr.changed_files ?? 0,
+            created_at:           pr.created_at,
+            updated_at:           pr.updated_at,
+            closed_at:            new Date().toISOString(),
+            merged_by: {
+              id:    0,
+              login: githubUsername,
+              avatar_url: "",
+              html_url: `https://github.com/${githubUsername}`,
+              type:  "User",
+            },
+            author_association: "CONTRIBUTOR",
+          },
+  
+          /* reward / quality data */
+          stakingRequired: staking ?? 0,
+          addedXp:         totalXP,
+          coinsAdded:      coinsAwarded,
+          reviewsApproved: Object.values(feedback.ratings).filter(v => v >= 4).length,
+          reviewsChangesRequested: Object.values(feedback.ratings).filter(v => v <= 2).length,
+          ciPassed:        true,
+          conflictsResolved: false,
+  
+          /* ✅  real number[] now  */
+          linkedIssues: extractLinkedIssues(pr.body ?? ""),
+        },
+        {
+          withCredentials: true,
+          headers: { Authorization: jwt ? `Bearer ${jwt}` : undefined },
+        }
+      );
 
-    // Optionally: send xpResult to backend or show toast
-    onMergePR()
+      console.log("✅ Ingestion complete");
+      await axios.patch(
+      `${base}/api/maintainer/users/update-stats`,
+        { githubUsername, addedXp: totalXP, addedCoins: coinsAwarded },
+        { withCredentials: true, headers: { Authorization: jwt ? `Bearer ${jwt}` : undefined } }
+      );
+      console.log("✅ User XP & coins updated");
+  
+      /* ───────── Final summary ───────── */
+      console.log(`🎉 Merge complete! PR #${pr.number}`);
+      console.log(`👤 Author:  ${githubUsername}`);
+      console.log(`💰 Staking: ${staking ?? 0}`);
+      console.log(`🏆 XP:      ${totalXP}`);
+      console.log(`🪙 Coins:   ${coinsAwarded}`);
+    } catch (err: any) {
+      console.error("❌ Merge process failed:", err.response?.data?.message || err.message);
+    }
+  
+    setShowMergeDialog(false);
+    onMergePR();
+  };
+  
+  const formatDate = (iso: string) => {
+    const diff = (Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60)
+    if (diff < 24) return `${Math.floor(diff)}h ago`
+    if (diff < 168) return `${Math.floor(diff / 24)}d ago`
+    return new Date(iso).toLocaleDateString()
   }
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
-    if (diffInHours < 24) return `${diffInHours}h ago`
-    if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}d ago`
-    return date.toLocaleDateString()
-  }
-
   return (
     <>
       <Card className="bg-white border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all duration-200">
@@ -102,11 +236,19 @@ export default function PRCard({
                       </Badge>
                     )}
                   </div>
+                  <div>
+                    {staking != null && (
+                      <div className="flex items-center space-x-1 text-sm text-yellow-700">
+                        <span>💰</span>
+                        <span className="font-medium">{staking}</span>
+                      </div>
+                    )}
+                  </div>
                   <div className="flex items-center space-x-4 text-sm text-gray-500 mb-3">
                     <span className="font-medium text-gray-700">#{pr.number}</span>
                     <div className="flex items-center space-x-1">
                       <User className="w-3 h-3" />
-                      <span>{pr.user.login}</span>
+                      <span>{githubUsername}</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <Clock className="w-3 h-3" />

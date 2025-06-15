@@ -1,5 +1,6 @@
 "use client"
 
+import logo from "@/assets/Logo.png";
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -54,9 +55,9 @@ export default function SignUp() {
         <div className="max-w-md w-full space-y-8">
           <div className="text-center">
             <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-gray-900">
-              <Coins className="h-8 w-8 text-white" />
-            </div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Join Pull Quest</h1>
+  <img src={logo} alt="Pull Quest Logo" className="h-16 w-16 object-cover rounded-full" />
+</div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">Join Pull Quest Now </h1>
             <p className="text-xl text-gray-600">Let’s get you started based on your role</p>
           </div>
 

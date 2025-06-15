@@ -1,5 +1,7 @@
 "use client"
 
+import logo from "@/assets/Logo.png";
+
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -39,38 +41,126 @@ export default function PullQuestLanding() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navigation */}
-      <nav className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <span className="text-xl font-semibold text-gray-900">Pull Quest</span>
-            </div>
-            <div className="hidden md:flex items-center space-x-8">
-              <button className="text-gray-600 hover:text-gray-900 text-sm font-medium">
-                Solutions
-                <ChevronDown className="inline w-4 h-4 ml-1" />
-              </button>
-              <a href="#" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
-                Enterprise
+      <nav className="bg-white border-b border-gray-200 relative">
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="flex justify-between items-center h-16">
+      <div className="flex items-center">
+<div className="mx-auto mr-4 flex h-10 w-10 items-center justify-center rounded-full bg-gray-900">
+  <img src={logo} alt="Pull Quest Logo" className="h-10 w-10 object-cover rounded-full" />
+</div>
+        <span className="text-xl font-semibold text-gray-900">Pull Quest</span>
+      </div>
+      <div className="hidden md:flex items-center space-x-8">
+        {/* Solutions Dropdown */}
+        <div className="relative group">
+          <button className="text-gray-600 hover:text-gray-900 text-sm font-medium flex items-center">
+            Solutions
+            <ChevronDown className="inline w-4 h-4 ml-1" />
+          </button>
+          <div className="absolute top-full left-0 mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+            <div className="py-2">
+              <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <div className="font-medium">For Contributors</div>
+                <div className="text-xs text-gray-500">Build your open source portfolio</div>
               </a>
-              <a href="#" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
-                Templates
+              <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <div className="font-medium">For Maintainers</div>
+                <div className="text-xs text-gray-500">Manage PRs and bounties efficiently</div>
               </a>
-              <button className="text-gray-600 hover:text-gray-900 text-sm font-medium">
-                Developer
-                <ChevronDown className="inline w-4 h-4 ml-1" />
-              </button>
-              <button className="text-gray-600 hover:text-gray-900 text-sm font-medium">
-                Resources
-                <ChevronDown className="inline w-4 h-4 ml-1" />
-              </button>
-              <a href="#" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
-                Pricing
+              <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <div className="font-medium">For Organizations</div>
+                <div className="text-xs text-gray-500">Post bounties and find talent</div>
+              </a>
+              <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <div className="font-medium">For Recruiters</div>
+                <div className="text-xs text-gray-500">Access top developer profiles</div>
               </a>
             </div>
           </div>
         </div>
-      </nav>
+
+        <a href="#" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
+          Enterprise
+        </a>
+        <a href="#" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
+          Templates
+        </a>
+
+        {/* Developer Dropdown */}
+        <div className="relative group">
+          <button className="text-gray-600 hover:text-gray-900 text-sm font-medium flex items-center">
+            Developer
+            <ChevronDown className="inline w-4 h-4 ml-1" />
+          </button>
+          <div className="absolute top-full left-0 mt-1 w-56 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+            <div className="py-2">
+              <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <div className="font-medium">API Documentation</div>
+                <div className="text-xs text-gray-500">Integrate with Pull Quest</div>
+              </a>
+              <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <div className="font-medium">GitHub Integration</div>
+                <div className="text-xs text-gray-500">Connect your repositories</div>
+              </a>
+              <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <div className="font-medium">Webhooks</div>
+                <div className="text-xs text-gray-500">Automate PR tracking</div>
+              </a>
+              <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <div className="font-medium">SDKs & Tools</div>
+                <div className="text-xs text-gray-500">Developer resources</div>
+              </a>
+              <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <div className="font-medium">Status Page</div>
+                <div className="text-xs text-gray-500">Service status & uptime</div>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* Resources Dropdown */}
+        <div className="relative group">
+          <button className="text-gray-600 hover:text-gray-900 text-sm font-medium flex items-center">
+            Resources
+            <ChevronDown className="inline w-4 h-4 ml-1" />
+          </button>
+          <div className="absolute top-full left-0 mt-1 w-56 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+            <div className="py-2">
+              <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <div className="font-medium">Blog</div>
+                <div className="text-xs text-gray-500">Latest updates and insights</div>
+              </a>
+              <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <div className="font-medium">Help Center</div>
+                <div className="text-xs text-gray-500">Get support and answers</div>
+              </a>
+              <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <div className="font-medium">Community Forum</div>
+                <div className="text-xs text-gray-500">Connect with other users</div>
+              </a>
+              <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <div className="font-medium">Best Practices</div>
+                <div className="text-xs text-gray-500">Open source contribution guides</div>
+              </a>
+              <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <div className="font-medium">Case Studies</div>
+                <div className="text-xs text-gray-500">Success stories and examples</div>
+              </a>
+              <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <div className="font-medium">Webinars</div>
+                <div className="text-xs text-gray-500">Educational content and events</div>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <a href="#" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
+          Pricing
+        </a>
+      </div>
+    </div>
+  </div>
+</nav>
 
       {/* Hero Section */}
       <section className="bg-white">
@@ -87,9 +177,7 @@ export default function PullQuestLanding() {
               </h1>
 
               <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-                A revolutionary platform where contributors stake virtual coins to submit PRs, maintainers get
-                high-quality submissions, and organizations build better open source projects through incentivized
-                development.
+                Contributors stake virtual coins to submit quality PRs, building ranked profiles that showcase their expertise. Maintainers receive better contributions from developers with skin in the game, while recruiters access a curated talent pool of verified contributors with proven track records.
               </p>
 
               <div className="space-y-4">
@@ -121,7 +209,7 @@ export default function PullQuestLanding() {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-900">John Developer</p>
-                      <p className="text-xs text-gray-500">Code Master • 2,450 XP</p>
+                      <p className="text-xs text-gray-500">Merge Master • 2,450 XP</p>
                     </div>
                   </div>
                   <Badge variant="secondary" className="text-xs">
@@ -210,17 +298,7 @@ export default function PullQuestLanding() {
       </section>
 
       {/* Trusted by section */}
-      <section className="bg-gray-50 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-sm text-gray-500 mb-8">Trusted by fast-growing open source projects around the world</p>
-          <div className="flex justify-center items-center space-x-12 opacity-60">
-            <div className="text-2xl font-bold text-gray-400">Vercel</div>
-            <div className="text-2xl font-bold text-gray-400">Supabase</div>
-            <div className="text-2xl font-bold text-gray-400">Prisma</div>
-            <div className="text-2xl font-bold text-gray-400">Next.js</div>
-          </div>
-        </div>
-      </section>
+     
 
       {/* User Profile System & XP-Based Ranking */}
       <section className="bg-white py-20">
@@ -283,10 +361,10 @@ export default function PullQuestLanding() {
               <h4 className="text-lg font-semibold text-gray-900 mb-6">Ranking Progression</h4>
               <div className="space-y-4">
                 {[
-                  { rank: "Code Novice", xp: "0-100 XP", color: "bg-gray-200" },
-                  { rank: "Code Apprentice", xp: "100-500 XP", color: "bg-blue-200" },
-                  { rank: "Code Contributor", xp: "500-1,500 XP", color: "bg-green-200" },
-                  { rank: "Code Master", xp: "1,500-3,000 XP", color: "bg-yellow-200" },
+                  { rank: "Rookie ", xp: "0-100 XP", color: "bg-gray-200" },
+                  { rank: "Builder", xp: "100-500 XP", color: "bg-blue-200" },
+                  { rank: "Contributor", xp: "500-1,500 XP", color: "bg-green-200" },
+                  { rank: "Merge Master", xp: "1,500-3,000 XP", color: "bg-yellow-200" },
                   { rank: "Code Expert", xp: "3,000-5,000 XP", color: "bg-orange-200" },
                   { rank: "Open Source Legend", xp: "5,000+ XP", color: "bg-purple-200" },
                 ].map((level, index) => (
@@ -312,7 +390,7 @@ export default function PullQuestLanding() {
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">Built for Every Stakeholder</h2>
             <p className="text-xl text-gray-600">
-              Three revenue streams that create value for contributors, maintainers, and organizations
+              Three revenue streams that create value for contributors, maintainers, organizations, and recruiters
             </p>
           </div>
 
@@ -364,22 +442,22 @@ export default function PullQuestLanding() {
               </CardContent>
             </Card>
 
-            {/* Maintainer */}
+            {/* Maintainer & Organization */}
             <Card className="border-2 border-gray-900 rounded-lg relative">
               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                 <Badge className="bg-gray-900 text-white">Most popular</Badge>
               </div>
               <CardHeader className="text-center pb-4">
                 <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <Shield className="w-6 h-6 text-purple-600" />
+                  <Building2 className="w-6 h-6 text-purple-600" />
                 </div>
-                <CardTitle className="text-lg text-gray-900">Maintainers</CardTitle>
+                <CardTitle className="text-lg text-gray-900">Maintainers & Organizations</CardTitle>
                 <CardDescription className="text-gray-600">
-                  Efficiently review high-quality PRs and manage bounties
+                  Manage projects, review and receive genuine PRs, and post bounty issues
                 </CardDescription>
                 <div className="mt-4">
-                  <span className="text-3xl font-bold text-gray-900">5%</span>
-                  <div className="text-sm text-gray-500">of bounty value</div>
+                  <span className="text-3xl font-bold text-gray-900">$29</span>
+                  <div className="text-sm text-gray-500">after 1 month of free usage</div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -390,7 +468,7 @@ export default function PullQuestLanding() {
                   </li>
                   <li className="flex items-center space-x-3">
                     <CheckCircle className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-700">Focus on high-stake submissions</span>
+                    <span className="text-sm text-gray-700">Post bounty issues for top talent</span>
                   </li>
                   <li className="flex items-center space-x-3">
                     <CheckCircle className="w-4 h-4 text-gray-400" />
@@ -402,30 +480,30 @@ export default function PullQuestLanding() {
                   </li>
                   <li className="flex items-center space-x-3">
                     <CheckCircle className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-700">Premium issue promotions</span>
+                    <span className="text-sm text-gray-700">Advanced analytics</span>
                   </li>
                 </ul>
                 <div className="pt-4 border-t border-gray-200">
                   <p className="text-xs text-gray-500 mb-3">
-                    Revenue Stream: Small percentage cut from bounties + premium promotions
+                    Revenue Stream: Monthly subscription + 5% bounty fees + premium promotions
                   </p>
                 </div>
                 <Button className="w-full bg-gray-900 hover:bg-gray-800 text-white">Get started</Button>
               </CardContent>
             </Card>
 
-            {/* Organization */}
+            {/* Recruiter */}
             <Card className="border border-gray-200 rounded-lg">
               <CardHeader className="text-center pb-4">
                 <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <Building2 className="w-6 h-6 text-green-600" />
+                  <Shield className="w-6 h-6 text-green-600" />
                 </div>
-                <CardTitle className="text-lg text-gray-900">Organizations</CardTitle>
+                <CardTitle className="text-lg text-gray-900">Recruiters</CardTitle>
                 <CardDescription className="text-gray-600">
-                  Encourage engagement with bounty-backed issues
+                  Access top open source talent and contributor profiles
                 </CardDescription>
                 <div className="mt-4">
-                  <span className="text-3xl font-bold text-gray-900">$99</span>
+                  <span className="text-3xl font-bold text-gray-900">$59</span>
                   <div className="text-sm text-gray-500">per month</div>
                 </div>
               </CardHeader>
@@ -433,35 +511,35 @@ export default function PullQuestLanding() {
                 <ul className="space-y-3">
                   <li className="flex items-center space-x-3">
                     <CheckCircle className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-700">Post bounty issues for top talent</span>
+                    <span className="text-sm text-gray-700">Access to contributor profiles</span>
                   </li>
                   <li className="flex items-center space-x-3">
                     <CheckCircle className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-700">Ensure high-quality submissions</span>
+                    <span className="text-sm text-gray-700">Advanced search and filtering</span>
                   </li>
                   <li className="flex items-center space-x-3">
                     <CheckCircle className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-700">Manage virtual currency flows</span>
+                    <span className="text-sm text-gray-700">Skills and expertise analytics</span>
                   </li>
                   <li className="flex items-center space-x-3">
                     <CheckCircle className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-700">Advanced analytics</span>
+                    <span className="text-sm text-gray-700">Direct contact capabilities</span>
                   </li>
                   <li className="flex items-center space-x-3">
                     <CheckCircle className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-700">Recruiter access integration</span>
+                    <span className="text-sm text-gray-700">Priority job posting access</span>
                   </li>
                 </ul>
                 <div className="pt-4 border-t border-gray-200">
                   <p className="text-xs text-gray-500 mb-3">
-                    Revenue Stream: Monthly subscription + recruiter access fees
+                    Revenue Stream: Monthly subscription for profile access + hiring cost per recruit
                   </p>
                 </div>
                 <Button className="w-full bg-gray-900 hover:bg-gray-800 text-white">Get started</Button>
               </CardContent>
             </Card>
           </div>
-        </div>
+        </div>  
       </section>
 
       {/* Solving Real Market Problems */}
@@ -680,11 +758,7 @@ export default function PullQuestLanding() {
                     Bounty System
                   </a>
                 </li>
-                <li>
-                  <a href="#" className="text-sm text-gray-600 hover:text-gray-900">
-                    API
-                  </a>
-                </li>
+                
               </ul>
             </div>
 

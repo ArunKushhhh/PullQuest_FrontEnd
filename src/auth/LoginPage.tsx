@@ -1,5 +1,6 @@
 "use client";
 
+import logo from "@/assets/Logo.png";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,10 +22,11 @@ import { useEffect } from "react";
 import { toast } from "sonner";
 
 type LoginCase = "initial" | "github_oauth" | "success";
+type UserRole = "contributor" | "maintainer" | "company";
 
 export default function LoginPage() {
   const [currentCase, setCurrentCase] = useState<LoginCase>("initial");
-  const [role, setRole] = useState<"contributor" | "maintainer" | "company" | "">("");
+  const [role, setRole] = useState<UserRole | undefined>(undefined);
   const [githubUsername, setGithubUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -69,6 +71,11 @@ export default function LoginPage() {
   // Handle initial login (Case 1)
   const handleInitialLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate role is selected
+    if (!role) {
+      return; // This shouldn't happen due to form validation, but safety check
+    }
 
     const result = await login({
       role: role || "contributor",
@@ -117,9 +124,7 @@ export default function LoginPage() {
             <Label>Who are you?</Label>
             <Select
               value={role}
-              onValueChange={(value: string) =>
-                setRole(value as "contributor" | "maintainer" | "company" | "")
-              }
+              onValueChange={(value: string) => setRole(value as UserRole)}
               disabled={isLoading}
               required
             >
@@ -300,7 +305,9 @@ export default function LoginPage() {
       <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] py-12 px-4">
         <div className="max-w-md w-full space-y-8">
           <div className="text-center">
-            <Coins className="mx-auto mb-6 h-16 w-16 rounded-full bg-gray-900 p-4 text-white" />
+              <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-gray-900">
+  <img src={logo} alt="Pull Quest Logo" className="h-16 w-16 object-cover rounded-full" />
+</div>
             <h1 className="text-4xl font-bold mb-4">
               {currentCase === "initial" ? "Welcome back" : "Almost there!"}
             </h1>

@@ -1,22 +1,21 @@
+// src/pages/RepoPrs.tsx
 "use client"
 
 import { useEffect, useState } from "react"
 import { useLocation } from "react-router-dom"
 import { useUser } from "../context/UserProvider"
 import axios from "axios"
+import ReactMarkdown from "react-markdown"
 import {
   GitPullRequest,
   ArrowLeft,
   AlertCircle,
-  Search,
-  Filter,
   Plus,
   CheckCircle2,
 } from "lucide-react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import MarkdownPreview from "@/components/MarkdownPreview"
 import PRCard from "@/components/PRsCard"
 
 interface RawPR {
@@ -47,9 +46,7 @@ interface Repo {
   stargazers_count: number
   updated_at: string
   open_issues_count: number
-  owner: {
-    login: string
-  }
+  owner: { login: string }
 }
 
 export default function RepoPrs() {
@@ -61,6 +58,7 @@ export default function RepoPrs() {
   const repo = repoData?.name
 
   const [prs, setPrs] = useState<RawPR[]>([])
+  const [stakingMap, setStakingMap] = useState<Record<number, number>>({})
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
@@ -70,76 +68,103 @@ export default function RepoPrs() {
   const [issueLoading, setIssueLoading] = useState(false)
   const [issueError, setIssueError] = useState<string | null>(null)
 
+  // 1) Load PRs
   useEffect(() => {
     if (userLoading || !user || !owner || !repo) return
-
     setLoading(true)
-    const url = `${import.meta.env.VITE_API_URL || "http://localhost:8012"}/api/maintainer/repo-pulls?owner=${owner}&repo=${repo}&state=open&per_page=30&page=1`
+    const base = import.meta.env.VITE_API_URL || "http://localhost:8012"
     const jwt = localStorage.getItem("token")
-    const config = {
-      withCredentials: true,
-      headers: { Authorization: jwt ? `Bearer ${jwt}` : undefined },
-    }
-
     axios
-      .get<{ success: boolean; data: RawPR[] }>(url, config)
+      .get<{ success: boolean; data: RawPR[] }>(
+        `${base}/api/maintainer/repo-pulls?owner=${owner}&repo=${repo}&state=open&per_page=30&page=1`,
+        { withCredentials: true, headers: { Authorization: jwt ? `Bearer ${jwt}` : undefined } }
+      )
       .then((res) => {
         if (res.data.success) setPrs(res.data.data)
         else setError("Failed to load pull requests")
       })
-      .catch((err) => {
-        setError(err.response?.data?.message || err.message || "Unknown error")
-      })
+      .catch((err) => setError(err.response?.data?.message || err.message))
       .finally(() => setLoading(false))
   }, [user, userLoading, owner, repo])
 
-  const fetchRelatedIssue = async (body: string) => {
-    const match = body?.match(/#(\d+)/)
-    const issueNumber = match?.[1]
-    const hasPullQuestTag = body?.includes("#PullQuest")
+  // 2) Fetch DB issue by GitHub global id
+  const fetchDbIssue = async (githubId: number) => {
+    const base = import.meta.env.VITE_API_URL || "http://localhost:8012"
+    const jwt = localStorage.getItem("token")
+    try {
+      const res = await axios.get<{ success: boolean; data: any }>(
+        `${base}/api/maintainer/issue-by-id?id=${githubId}`,
+        { withCredentials: true, headers: { Authorization: jwt ? `Bearer ${jwt}` : undefined } }
+      )
+      return res.data.success ? res.data.data : null
+    } catch (e) {
+      console.error("DB fetch error:", (e as any).message)
+      return null
+    }
+  }
 
-    if (!issueNumber) return
-
+  // 3) On Related Issue
+  const onFetchIssue = async (pr: RawPR) => {
+    const m = pr.body.match(/#(\d+)/)
+    if (!m?.[1]) {
+      setIssueError("No issue number in PR body")
+      return
+    }
     setIssueLoading(true)
     setIssueError(null)
     setRelatedIssue(null)
 
-    const url = `${import.meta.env.VITE_API_URL || "http://localhost:8012"}/api/maintainer/issue-by-number?owner=${owner}&repo=${repo}&number=${issueNumber}`
-    const jwt = localStorage.getItem("token")
-    const config = {
-      withCredentials: true,
-      headers: { Authorization: jwt ? `Bearer ${jwt}` : undefined },
-    }
-
     try {
-      const res = await axios.get(url, config)
-      if (res.data.success) setRelatedIssue(res.data.data)
-      else setIssueError("Failed to fetch issue")
-    } catch (err: any) {
-      setIssueError(err.response?.data?.message || "Issue fetch failed")
+      const base = import.meta.env.VITE_API_URL || "http://localhost:8012"
+      const jwt = localStorage.getItem("token")
+
+      // a) GitHub proxy to get global id
+      const ghRes = await axios.get<{ success: boolean; data: any }>(
+        `${base}/api/maintainer/issue-by-number?owner=${owner}&repo=${repo}&number=${m[1]}`,
+        { withCredentials: true, headers: { Authorization: jwt ? `Bearer ${jwt}` : undefined } }
+      )
+      if (!ghRes.data.success) throw new Error("GitHub lookup failed")
+      const ghIssue = ghRes.data.data
+
+      // b) DB fetch
+      const db = await fetchDbIssue(ghIssue.id)
+      if (!db) throw new Error("Ingested issue not found")
+      setStakingMap((map) => ({ ...map, [pr.number]: db.stakingRequired }))
+      setRelatedIssue(db)
+    } catch (e: any) {
+      setIssueError(e.message || "Issue fetch failed")
     } finally {
       setIssueLoading(false)
     }
   }
 
-  const filteredPRs = prs.filter(
+  // Store GitHub username when PR is selected
+  const handlePRSelect = (pr: RawPR) => {
+    // Store the GitHub username
+    const githubUsername = pr.user.login
+    console.log(`📝 Storing GitHub username: ${githubUsername}`)
+    
+    // Update selected state
+    setSelectedPR((s) => (s?.number === pr.number ? null : pr))
+  }
+
+  const filtered = prs.filter(
     (pr) =>
-      pr.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      pr.user.login.toLowerCase().includes(searchTerm.toLowerCase())
+      pr.title.toLowerCase().includes(searchTerm) ||
+      pr.user.login.toLowerCase().includes(searchTerm)
   )
 
   if (userLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <span className="text-gray-600">Loading pull requests...</span>
+      <div className="min-h-screen flex items-center justify-center">
+        <span>Loading PRs…</span>
       </div>
     )
   }
-
   if (error || !owner || !repo) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-red-600">{error || "Missing repository information"}</p>
+      <div className="min-h-screen flex items-center justify-center">
+        <span className="text-red-600">{error || "Missing repo info"}</span>
       </div>
     )
   }
@@ -147,72 +172,65 @@ export default function RepoPrs() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back to repositories
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 py-6 flex items-center">
+          <Button variant="ghost" size="sm" className="mr-4">
+            <ArrowLeft className="w-4 h-4" />
+            Back
           </Button>
-          <div className="mt-6">
-            <div className="flex items-center space-x-3 mb-2">
-              <GitPullRequest className="w-6 h-6 text-gray-700" />
-              <h1 className="text-4xl font-bold text-gray-900">Pull Requests</h1>
-            </div>
-            <p className="text-xl text-gray-600">{owner}/{repo}</p>
-          </div>
+          <h1 className="text-2xl font-bold">
+            {owner}/{repo} Pull Requests
+          </h1>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Search Bar */}
-        <div className="flex items-center justify-between mb-6">
-          <Input
-            placeholder="Search pull requests..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-64"
+      {/* Body */}
+      <div className="max-w-7xl mx-auto px-4 py-8 space-y-4">
+        <Input
+          placeholder="Search PRs…"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
+          className="w-64"
+        />
+
+        {filtered.length === 0 && (
+          <Card className="border-dashed">
+            <CardContent className="text-center py-12">
+              <GitPullRequest className="mx-auto w-12 h-12 text-gray-300" />
+              <p className="mt-4 text-gray-500">No open pull requests.</p>
+              <Button onClick={() => window.open(`https://github.com/${owner}/${repo}/pulls`, "_blank")}>
+                <Plus className="w-4 h-4 mr-2" /> Create PR
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {filtered.map((pr) => (
+          <PRCard
+            key={pr.number}
+            pr={pr}
+            staking={stakingMap[pr.number]}
+            githubUsername={pr.user.login}
+            owner={owner}
+            repo={repo}
+            isSelected={selectedPR?.number === pr.number}
+            onSelect={() => handlePRSelect(pr)}
+            onFetchIssue={() => onFetchIssue(pr)}
+            onClosePR={() => console.log(`Close PR #${pr.number}`)}
+            onMergePR={() => console.log(`Merge PR #${pr.number}`)}
           />
-        </div>
+        ))}
 
-        {/* PR Cards */}
-        <div className="space-y-4">
-          {filteredPRs.length ? (
-            filteredPRs.map((pr) => (
-              <PRCard
-                key={pr.number}
-                pr={pr}
-                isSelected={selectedPR?.number === pr.number}
-                onSelect={() => setSelectedPR(selectedPR?.number === pr.number ? null : pr)}
-                onFetchIssue={() => fetchRelatedIssue(pr.body)}
-              />
-            ))
-          ) : (
-            <Card className="bg-white border border-dashed border-gray-200">
-              <CardContent className="p-12 text-center">
-                <GitPullRequest className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">No open pull requests found.</p>
-                <Button
-                  variant="outline"
-                  onClick={() => window.open(`https://github.com/${owner}/${repo}/pulls`, "_blank")}
-                >
-                  <Plus className="w-4 h-4 mr-2" /> Create Pull Request
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* Related Issue */}
         {issueLoading && (
-          <Card className="mt-6 bg-blue-50 border-blue-200">
+          <Card className="bg-blue-50 border-blue-200">
             <CardContent className="p-6 text-center">
-              <span className="text-blue-800">Fetching related issue...</span>
+              <span className="text-blue-800">Fetching related issue…</span>
             </CardContent>
           </Card>
         )}
 
         {issueError && (
-          <Card className="mt-6 bg-red-50 border-red-200">
+          <Card className="bg-red-50 border-red-200">
             <CardContent className="p-6">
               <AlertCircle className="w-5 h-5 text-red-500" />
               <p className="text-red-800 font-medium">{issueError}</p>
@@ -221,7 +239,7 @@ export default function RepoPrs() {
         )}
 
         {relatedIssue && (
-          <Card className="mt-6 bg-green-50 border-green-200">
+          <Card className="bg-green-50 border-green-200">
             <CardHeader className="pb-4 flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <CheckCircle2 className="w-5 h-5 text-green-600" />
@@ -240,7 +258,11 @@ export default function RepoPrs() {
               <h4 className="font-semibold text-green-900">
                 #{relatedIssue.number}: {relatedIssue.title}
               </h4>
-              <MarkdownPreview content={relatedIssue.body || "*No description provided.*"} />
+              <div className="prose prose-sm max-w-none">
+                <ReactMarkdown>
+                  {relatedIssue.body || "*No description provided.*"}
+                </ReactMarkdown>
+              </div>
             </CardContent>
           </Card>
         )}
