@@ -101,9 +101,14 @@ export default function ContributorSettings() {
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem("token");
+    const githubToken = localStorage.getItem("github_access_token");
+    
     return {
-      withCredentials: true,
-      headers: { Authorization: token ? `Bearer ${token}` : undefined },
+      headers: { 
+        Authorization: token ? `Bearer ${token}` : "",
+        "X-GitHub-Token": githubToken || "" 
+      },
+      withCredentials: true
     };
   };
 
