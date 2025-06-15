@@ -12,16 +12,16 @@ const GitHubContributorProfile = () => {
 
   // Sample user data
   const userData = {
-    name: "Arun Kumar Kushwaha",
-    username: "ArunKushhhh",
+    name: "Nishant Singh",
+    username: "NishantSinghhhhh",
     role: "Contributor",
-    bio: "Designer | Developer🥂",
-    location: "Pune, Maharashtra",
+    bio: "Full-stack developer passionate about open source",
+    location: "India",
     coins: 1250,
-    xp: 2750,
-    avatar: "",
+    xp: 2450,
+    avatar: "https://avatars.githubusercontent.com/u/151461374?v=4",
     socialLinks: {
-      github: "https://github.com/ArunKushhhh",
+      github: "https://github.com/NishantSinghhhhh",
       linkedin: "https://www.linkedin.com/in/arun-kumar-kushwaha-b26085286/",
       twitter: "https://twitter.com/alexdev",
     },
